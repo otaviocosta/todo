@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-import 'models/item.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/item.dart';
 
 void main() {
@@ -26,10 +27,10 @@ class HomePage extends StatefulWidget {
   var items = new List<Item>();
   HomePage() {
     items = [];
-    items.add(Item(id: 1, title: "Morzão", done: false));
-    items.add(Item(id: 2, title: "Morzãozão", done: true));
-    items.add(Item(id: 3, title: "Morzote", done: false));
-    items.add(Item(id: 4, title: "Morzi", done: false));
+    // items.add(Item(id: 1, title: "Morzão", done: false));
+    // items.add(Item(id: 2, title: "Morzãozão", done: true));
+    // items.add(Item(id: 3, title: "Morzote", done: false));
+    // items.add(Item(id: 4, title: "Morzi", done: false));
   }
 
   @override
@@ -45,15 +46,37 @@ class _HomePageState extends State<HomePage> {
         Item(id: widget.items.length + 1, title: newTaskCtrl.text, done: false),
       );
       newTaskCtrl.text = "";
+      save();
     });
   }
 
   void remove(int index) {
     setState(() {
       widget.items.removeAt(index);
+      save();
     });
   }
 
+  Future load() async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = prefs.getString('data');
+    if (data != null) {
+      Iterable decoded = jsonDecode(data);
+      List<Item> result = decoded.map((e) => Item.fromJson(e)).toList();
+      setState(() {
+        widget.items = result;
+      });
+    }
+  }
+
+  save() async {
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setString('data', jsonEncode(widget.items));
+  }
+
+  _HomePageState() {
+    load();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,6 +108,7 @@ class _HomePageState extends State<HomePage> {
               onChanged: (value) {
                 setState(() {
                   item.done = value;
+                  save();
                 });
               },
             ),
